@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .list {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fafafa;
+      max-height: 220px;
+      overflow: auto;
+      font-size: 14px;
+    }
+    .list h3 { margin: 0 0 8px; font-size: 14px; }
+    .list code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .muted { color: #6b7280; font-size: 13px; margin: 6px 0 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+
+      <div class="header">
+        <div>
+          <h1 class="title">Admin Panel</h1>
+          <p class="subtitle">Create timetable entries (admin only)</p>
+        </div>
+        <span class="badge">Admin</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" id="btnLoadLists" type="button">Load IDs</button>
+        <button class="btn btn-secondary" id="btnGoTimetable" type="button">Open Timetable</button>
+        <button class="btn btn-secondary" id="btnBack" type="button">Back</button>
+      </div>
+
+      <div class="message" id="msg"></div>
+
+      <div class="form-row">
+        <div class="grid2">
+          <div>
+            <label>Subject ID</label>
+            <input id="subjectId" type="number" placeholder="e.g. 1" />
+            <div class="muted">Use the list below to find IDs</div>
+          </div>
+          <div>
+            <label>Room ID</label>
+            <input id="roomId" type="number" placeholder="e.g. 1" />
+            <div class="muted">Use the list below to find IDs</div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label>Day</label>
+            <select id="day">
+              <option>Monday</option>
+              <option>Tuesday</option>
+              <option>Wednesday</option>
+              <option>Thursday</option>
+              <option>Friday</option>
+            </select>
+          </div>
+          <div>
+            <label>Time format</label>
+            <input disabled value="Use time pickers below" />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label>Start time</label>
+            <input id="startTime" type="time" />
+          </div>
+          <div>
+            <label>End time</label>
+            <input id="endTime" type="time" />
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btnCreate" type="button">Create Timetable Entry</button>
+      </div>
+
+      <div class="grid2">
+        <div class="list">
+          <h3>Subjects</h3>
+          <div id="subjectsList"><span class="muted">Click “Load IDs”</span></div>
+        </div>
+        <div class="list">
+          <h3>Rooms</h3>
+          <div id="roomsList"><span class="muted">Click “Load IDs”</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const msg = document.getElementById("msg");
+    const subjectsList = document.getElementById("subjectsList");
+    const roomsList = document.getElementById("roomsList");
+
+    function show(text) { msg.textContent = text; }
+
+    function renderList(items, labelKey) {
+      if (!Array.isArray(items) || items.length === 0) return "<span class='muted'>Empty</span>";
+      return items.map(x => `<div><code>${x.id}</code> — ${x[labelKey]}</div>`).join("");
+    }
+
+    async function loadIds() {
+      show("Loading subjects and rooms...");
+
+      try {
+        const sRes = await fetch("/api/subjects", { credentials: "include" });
+        const sData = await sRes.json().catch(() => []);
+        if (sRes.ok) subjectsList.innerHTML = renderList(sData, "name");
+        else subjectsList.innerHTML = "<span class='muted'>Cannot load subjects</span>";
+const rRes = await fetch("/api/rooms", { credentials: "include" });
+        const rData = await rRes.json().catch(() => []);
+        if (rRes.ok) roomsList.innerHTML = renderList(rData, "name");
+        else roomsList.innerHTML = "<span class='muted'>Cannot load rooms</span>";
+
+        show("Loaded");
+      } catch (e) {
+        show("Network error");
+      }
+    }
+
+    document.getElementById("btnLoadLists").addEventListener("click", loadIds);
+
+    document.getElementById("btnCreate").addEventListener("click", async () => {
+      show("Creating...");
+
+      const subject_id = Number(document.getElementById("subjectId").value);
+      const room_id = Number(document.getElementById("roomId").value);
+      const day = document.getElementById("day").value;
+      const start_time = document.getElementById("startTime").value;
+      const end_time = document.getElementById("endTime").value;
+
+      if (!subject_id || !room_id || !day || !start_time || !end_time) {
+        show("Please fill all fields");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/timetable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ subject_id, room_id, day, start_time, end_time })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          show(data.message || "Create failed");
+          return;
+        }
+
+        show("Created successfully");
+      } catch (e) {
+        show("Network error");
+      }
+    });
+
+    document.getElementById("btnGoTimetable").addEventListener("click", () => {
+      window.location.href = "/timetable.html";
+    });
+
+    document.getElementById("btnBack").addEventListener("click", () => {
+      window.location.href = "/login.html";
+    });
+  </script>
+</body>
+</html>

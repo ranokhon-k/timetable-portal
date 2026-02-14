@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+
+      <div class="header">
+        <div>
+          <h1 class="title">Timetable Portal</h1>
+          <p class="subtitle">Login to continue</p>
+        </div>
+        <span class="badge">Student / Admin</span>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label>Email</label>
+          <input id="email" type="email" placeholder="email@example.com" />
+        </div>
+
+        <div>
+          <label>Password</label>
+          <input id="password" type="password" placeholder="Password" />
+        </div>
+
+        <button class="btn btn-primary" id="btnLogin">Login</button>
+
+        <div class="actions">
+          <button class="btn btn-secondary" id="goTimetable" type="button">Open Timetable</button>
+          <button class="btn btn-secondary" id="goAdmin" type="button">Admin Panel</button>
+        </div>
+
+        <div class="message" id="msg"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const msg = document.getElementById("msg");
+
+    function show(text) {
+      msg.textContent = text;
+    }
+
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+      show("Logging in...");
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          show(data.message || "Login failed");
+          return;
+        }
+
+        show("Login successful");
+      } catch (e) {
+        show("Network error");
+      }
+    });
+
+    document.getElementById("goTimetable").addEventListener("click", () => {
+      window.location.href = "/timetable.html";
+    });
+
+    document.getElementById("goAdmin").addEventListener("click", () => {
+      window.location.href = "/admin.html";
+    });
+  </script>
+</body>
+</html>

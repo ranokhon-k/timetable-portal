@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timetable</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    /* small extra just for table */
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+    th { background: #f3f4f6; font-size: 13px; color: #374151; }
+    tr:hover td { background: #fafafa; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+
+      <div class="header">
+        <div>
+          <h1 class="title">Timetable</h1>
+          <p class="subtitle">Read-only view (students + admin)</p>
+        </div>
+        <span class="badge">Read-only</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btnReload" type="button">Reload</button>
+        <button class="btn btn-secondary" id="btnBack" type="button">Back</button>
+      </div>
+
+      <div class="message" id="msg"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Room</th>
+            <th>Day</th>
+            <th>Start</th>
+            <th>End</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <script>
+    const msg = document.getElementById("msg");
+    const tbody = document.getElementById("tbody");
+
+    function show(text) {
+      msg.textContent = text;
+    }
+
+    function rowHtml(item) {
+      const subject = item.subject || item.course || "N/A";
+      const room = item.room || "N/A";
+      const day = item.day || "N/A";
+      const start = (item.start_time || "").toString().slice(0, 5);
+      const end = (item.end_time || "").toString().slice(0, 5);
+
+      return `
+        <tr>
+          <td>${subject}</td>
+          <td>${room}</td>
+          <td>${day}</td>
+          <td>${start}</td>
+          <td>${end}</td>
+        </tr>
+      `;
+    }
+
+    async function loadTimetable() {
+      show("Loading...");
+      tbody.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/timetable", { credentials: "include" });
+        const data = await res.json().catch(() => []);
+
+        if (!res.ok) {
+          show(data.message || "Cannot load timetable");
+          return;
+        }
+
+        if (!Array.isArray(data) || data.length === 0) {
+          show("No entries yet");
+          return;
+        }
+
+        tbody.innerHTML = data.map(rowHtml).join("");
+        show("Loaded");
+      } catch (e) {
+        show("Network error");
+      }
+    }
+
+    document.getElementById("btnReload").addEventListener("click", loadTimetable);
+    document.getElementById("btnBack").addEventListener("click", () => {
+      window.location.href = "/login.html";
+    });
+
+    loadTimetable();
+  </script>
+</body>
+</html>
