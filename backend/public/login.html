@@ -3,33 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login</title>
+  <title>Login | Timetable Portal</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div class="container">
+  <div class="container container-narrow">
     <div class="card">
 
       <div class="header">
         <div>
+          <p class="eyebrow">University Portal</p>
           <h1 class="title">Timetable Portal</h1>
-          <p class="subtitle">Login to continue</p>
+          <p class="subtitle">Sign in to manage or view the weekly university schedule.</p>
         </div>
         <span class="badge">Student / Admin</span>
       </div>
 
       <div class="form-row">
         <div>
-          <label>Email</label>
-          <input id="email" type="email" placeholder="email@example.com" />
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="email@example.com" autocomplete="email" />
         </div>
 
         <div>
-          <label>Password</label>
-          <input id="password" type="password" placeholder="Password" />
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Password" autocomplete="current-password" />
         </div>
 
-        <button class="btn btn-primary" id="btnLogin">Login</button>
+        <button class="btn btn-primary" id="btnLogin" type="button">Sign in</button>
 
         <div class="actions">
           <button class="btn btn-secondary" id="goTimetable" type="button">Open Timetable</button>
@@ -45,15 +46,29 @@
   <script>
     const msg = document.getElementById("msg");
 
-    function show(text) {
+    function show(text, type = "info") {
       msg.textContent = text;
+      msg.className = `message ${type}`;
+    }
+
+    function setLoading(button, isLoading, text) {
+      button.disabled = isLoading;
+      if (!button.dataset.label) button.dataset.label = button.textContent;
+      button.textContent = isLoading ? text : button.dataset.label;
     }
 
     document.getElementById("btnLogin").addEventListener("click", async () => {
+      const button = document.getElementById("btnLogin");
+      setLoading(button, true, "Signing in...");
       show("Logging in...");
 
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
+      if (!email || !password) {
+  show("Please enter email and password", "error");
+  setLoading(button, false);
+  return;
+}
 
       try {
         const res = await fetch("/api/auth/login", {
@@ -66,13 +81,18 @@
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          show(data.message || "Login failed");
+          show(data.message || "Login failed", "error");
           return;
         }
 
-        show("Login successful");
+        show("Login successful", "success");
+        setTimeout(() => {
+  window.location.href = "/timetable.html";
+}, 1000);
       } catch (e) {
-        show("Network error");
+        show("Network error", "error");
+      } finally {
+        setLoading(button, false);
       }
     });
 
